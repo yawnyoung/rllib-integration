@@ -16,7 +16,7 @@ from rllib_integration.base_experiment import BaseExperiment
 from rllib_integration.helper import post_process_image
 
 
-class DQNExperiment(BaseExperiment):
+class DreamerExperiment(BaseExperiment):
     def __init__(self, config={}):
         super().__init__(config)  # Creates a self.config with the experiment configuration
 
@@ -49,9 +49,11 @@ class DQNExperiment(BaseExperiment):
         self.last_heading_deviation = 0
 
     def get_action_space(self):
-        """Returns the action space, in this case, a discrete space"""
-        print('action space shape ', Discrete(len(self.get_actions())).shape)
-        return Discrete(len(self.get_actions()))
+        # cmd_dim = 3
+        low = np.asarray([-1.0, -1.0, -1.0])
+        high = np.asarray([1.0, 1.0, 1.0])
+        action_space = Box(low=low, high=high, dtype=np.float32)
+        return action_space
 
     def get_observation_space(self):
         num_of_channels = 3
@@ -67,49 +69,16 @@ class DQNExperiment(BaseExperiment):
         )
         return image_space
 
-    def get_actions(self):
-        return {
-            0: [0.0, 0.00, 0.0, False, False],  # Coast
-            1: [0.0, 0.00, 1.0, False, False],  # Apply Break
-            2: [0.0, 0.75, 0.0, False, False],  # Right
-            3: [0.0, 0.50, 0.0, False, False],  # Right
-            4: [0.0, 0.25, 0.0, False, False],  # Right
-            5: [0.0, -0.75, 0.0, False, False],  # Left
-            6: [0.0, -0.50, 0.0, False, False],  # Left
-            7: [0.0, -0.25, 0.0, False, False],  # Left
-            8: [0.3, 0.00, 0.0, False, False],  # Straight
-            9: [0.3, 0.75, 0.0, False, False],  # Right
-            10: [0.3, 0.50, 0.0, False, False],  # Right
-            11: [0.3, 0.25, 0.0, False, False],  # Right
-            12: [0.3, -0.75, 0.0, False, False],  # Left
-            13: [0.3, -0.50, 0.0, False, False],  # Left
-            14: [0.3, -0.25, 0.0, False, False],  # Left
-            15: [0.6, 0.00, 0.0, False, False],  # Straight
-            16: [0.6, 0.75, 0.0, False, False],  # Right
-            17: [0.6, 0.50, 0.0, False, False],  # Right
-            18: [0.6, 0.25, 0.0, False, False],  # Right
-            19: [0.6, -0.75, 0.0, False, False],  # Left
-            20: [0.6, -0.50, 0.0, False, False],  # Left
-            21: [0.6, -0.25, 0.0, False, False],  # Left
-            22: [1.0, 0.00, 0.0, False, False],  # Straight
-            23: [1.0, 0.75, 0.0, False, False],  # Right
-            24: [1.0, 0.50, 0.0, False, False],  # Right
-            25: [1.0, 0.25, 0.0, False, False],  # Right
-            26: [1.0, -0.75, 0.0, False, False],  # Left
-            27: [1.0, -0.50, 0.0, False, False],  # Left
-            28: [1.0, -0.25, 0.0, False, False],  # Left
-        }
-
     def compute_action(self, action):
         """Given the action, returns a carla.VehicleControl() which will be applied to the hero"""
-        action_control = self.get_actions()[int(action)]
-
-        action = carla.VehicleControl()
-        action.throttle = action_control[0]
-        action.steer = action_control[1]
-        action.brake = action_control[2]
-        action.reverse = action_control[3]
-        action.hand_brake = action_control[4]
+        action_control = carla.VehicleControl()
+        action_control.reverse = False
+        if action[0] < -1e-6:
+            action_control.reverse = True
+        action_control.throttle = math.fabs(action[0])
+        action_control.steer = action[1]
+        action_control.brake = action[2]
+        action_control.hand_brake = False
 
         self.last_action = action
 

@@ -23,17 +23,20 @@ from rllib_integration.carla_core import kill_all_servers
 from rllib_integration.helper import get_checkpoint, launch_tensorboard
 
 from dqn_example.dqn_experiment import DQNExperiment
+from dqn_example.dreamer_experiment import DreamerExperiment
 from dqn_example.dqn_callbacks import DQNCallbacks
 from dqn_example.dqn_trainer import CustomDQNTrainer
+from dqn_example.dreamer_trainer import CustromDreamerTrainer
 
 # Set the experiment to EXPERIMENT_CLASS so that it is passed to the configuration
-EXPERIMENT_CLASS = DQNExperiment
+# EXPERIMENT_CLASS = DQNExperiment
+EXPERIMENT_CLASS = DreamerExperiment
 
 
 def run(args):
     try:
         ray.init(address= "auto" if args.auto else None)
-        tune.run(CustomDQNTrainer,
+        tune.run(CustromDreamerTrainer,
                  name=args.name,
                  local_dir=args.directory,
                  stop={"perf/ram_util_percent": 85.0},
